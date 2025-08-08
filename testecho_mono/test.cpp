@@ -115,19 +115,19 @@ int main(int argc, char** argv)
 		sysTime.wHour, sysTime.wMinute, sysTime.wSecond);
 	printf("%s\n", szOutputFileName);
 
-	// Open input files with error checking
-	ref_fd = fopen(szEchoFileName, "rb");
-	if (!ref_fd) {
-		printf("Error: Cannot open input file %s\n", szEchoFileName);
-		return -1;
-	}
+    // Open input files with error checking (echo=mic, ref=speaker)
+    echo_fd = fopen(szEchoFileName, "rb");
+    if (!echo_fd) {
+        printf("Error: Cannot open input file %s\n", szEchoFileName);
+        return -1;
+    }
 
-	echo_fd = fopen(szRefFileName, "rb");
-	if (!echo_fd) {
-		printf("Error: Cannot open input file %s\n", szRefFileName);
-		fclose(ref_fd);
-		return -1;
-	}
+    ref_fd = fopen(szRefFileName, "rb");
+    if (!ref_fd) {
+        printf("Error: Cannot open input file %s\n", szRefFileName);
+        fclose(echo_fd);
+        return -1;
+    }
 
 	// Open output file with error checking
 	e_fd = fopen(szOutputFileName, "wb");
@@ -168,10 +168,11 @@ int main(int argc, char** argv)
 		fread(ref_buf, sizeof(short), frame_size, ref_fd);
 		fread(echo_buf, sizeof(short), frame_size, echo_fd);
 
-		// ref_buf  : Data obtained from speaker  
-		// echo_buf : Data collected from microphone 
-		// e_buf    : Data after echo cancellation  
-		speex_echo_cancellation(st, ref_buf, echo_buf, e_buf);
+        // ref_buf  : Data obtained from speaker  
+        // echo_buf : Data collected from microphone 
+        // e_buf    : Data after echo cancellation  
+        // speex_echo_cancellation expects (mic, speaker, out)
+        speex_echo_cancellation(st, echo_buf, ref_buf, e_buf);
 		speex_preprocess_run(den, e_buf);
 		fwrite(e_buf, sizeof(short), frame_size, e_fd);
 	}
